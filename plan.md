@@ -1,7 +1,7 @@
 # Interview Teleprompter with AI Speech Recognition
 
 ## Current Status
-**Stage: Core MVP working.** Transcription + semantic matching functional. Building interview context + LLM feedback next.
+**Stage: Feature-complete MVP.** All core features built and working.
 
 ## How We're Building This (Workflow)
 One feature at a time. Test it. Commit to git. Then move on. Never skip ahead.
@@ -10,16 +10,26 @@ One feature at a time. Test it. Commit to git. Then move on. Never skip ahead.
 Plan → Build one thing → Test it in browser → git commit → Repeat
 ```
 
-## Immediate Next Steps
+## Completed
 - [x] **Step 1** — Project scaffold (Vite + React + TypeScript + Tailwind)
 - [x] **Step 2** — Dev server running at http://localhost:5173
 - [x] **Step 3** — Talking points editor with localStorage
 - [x] **Step 4** — Local Whisper transcription via relay server (continuous, no gaps)
 - [x] **Step 5** — Semantic matching via configurable LLM API (Anthropic or OpenAI format)
-- [x] **Step 6** — Settings panel (STT provider, intervals, API key/URL/model, feedback frequency)
-- [x] **Step 7** — Interview context panel (role, company, interview type, notes, time milestones)
-- [x] **Step 8** — LLM coaching feedback (runs on adjustable interval, uses context + progress)
-- [ ] **Step 9** — AI-generated talking points (LLM suggests points from context, user edits before session)
+- [x] **Step 6** — Settings panel (intervals, API key/URL/model/type, feedback frequency, STT provider)
+- [x] **Step 7** — Interview context panel (role, company, type, notes, time milestones)
+- [x] **Step 8** — LLM coaching feedback as sidebar bubbles (adjustable interval, color-coded)
+- [x] **Step 9** — AI-generated talking points from interview context
+- [x] **Step 10** — Script panel with LLM section tracking (paraphrase-safe, highlights current section)
+- [x] **Step 11** — Resizable columns with drag handles (widths saved to localStorage)
+- [x] **Step 12** — Start/Stop button in header, always accessible
+
+## Possible Next Steps
+- [ ] Polish pass — font sizes, spacing, dark mode
+- [ ] Reset button to clear covered points and restart a session
+- [ ] Export transcript as text file after session
+- [ ] Keyboard shortcut to start/stop listening
+- [ ] Practice mode — session timer with target duration warning
 
 ---
 
