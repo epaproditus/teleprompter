@@ -6,11 +6,27 @@ import LiveTranscript from './components/LiveTranscript';
 import SettingsPanel from './components/SettingsPanel';
 import InterviewContextPanel from './components/InterviewContextPanel';
 import ScriptView from './components/ScriptView';
+import DragHandle from './components/DragHandle';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useDeepgramTranscription } from './hooks/useDeepgramTranscription';
 import { useSemanticMatcher } from './hooks/useSemanticMatcher';
 import { useCoachingFeedback } from './hooks/useCoachingFeedback';
 import { useScriptTracker } from './hooks/useScriptTracker';
+
+const LAYOUT_KEY = 'teleprompter_layout';
+
+function loadLayout() {
+  try {
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    return raw ? JSON.parse(raw) : { scriptW: 380, coachW: 220 };
+  } catch {
+    return { scriptW: 380, coachW: 220 };
+  }
+}
+
+function saveLayout(layout: { scriptW: number; coachW: number }) {
+  localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+}
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -24,6 +40,7 @@ export default function App() {
   const [showContext, setShowContext] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [scriptSections, setScriptSections] = useState<ScriptSection[]>(context.scriptSections ?? []);
+  const [layout, setLayout] = useState(loadLayout);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const whisper = useSpeechRecognition(settings.recordingIntervalSec);
@@ -153,18 +170,30 @@ export default function App() {
           </div>
         </div>
 
-        {/* Main layout */}
-        <div className="flex gap-6 items-start">
+        {/* Main layout — resizable columns */}
+        <div className="flex items-start" style={{ height: 'calc(100vh - 10rem)' }}>
 
-          {/* Script panel — only shown if script is loaded */}
+          {/* Script panel */}
           {hasScript && (
-            <div className="w-72 flex-shrink-0 sticky top-8 max-h-[calc(100vh-8rem)] overflow-y-auto">
-              <ScriptView sections={scriptSections} />
-            </div>
+            <>
+              <div
+                className="flex-shrink-0 h-full overflow-y-auto pr-2"
+                style={{ width: layout.scriptW }}
+              >
+                <ScriptView sections={scriptSections} />
+              </div>
+              <DragHandle onDrag={delta => {
+                setLayout(prev => {
+                  const next = { ...prev, scriptW: Math.max(200, Math.min(800, prev.scriptW + delta)) };
+                  saveLayout(next);
+                  return next;
+                });
+              }} />
+            </>
           )}
 
           {/* Center: talking points + controls */}
-          <div className="flex-1 flex flex-col gap-6 min-w-0">
+          <div className="flex-1 flex flex-col gap-5 min-w-0 h-full overflow-y-auto px-2">
             <TalkingPointsEditor
               points={points}
               settings={settings}
@@ -173,7 +202,6 @@ export default function App() {
               onDelete={deletePoint}
               onReplace={replacePoints}
             />
-
             <div className="flex flex-col gap-3">
               {active.error && <p className="text-red-500 text-sm">{active.error}</p>}
               {!settings.apiKey && (
@@ -191,13 +219,25 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right: coaching sidebar */}
-          <div className="w-52 flex-shrink-0 flex flex-col gap-3 sticky top-8">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Coach</p>
+          {/* Drag handle before coach */}
+          <DragHandle onDrag={delta => {
+            setLayout(prev => {
+              const next = { ...prev, coachW: Math.max(150, Math.min(500, prev.coachW - delta)) };
+              saveLayout(next);
+              return next;
+            });
+          }} />
+
+          {/* Coaching sidebar */}
+          <div
+            className="flex-shrink-0 flex flex-col gap-3 h-full overflow-y-auto pl-2"
+            style={{ width: layout.coachW }}
+          >
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex-shrink-0">Coach</p>
 
             {feedbackLoading && feedback.length === 0 && (
               <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2">
-                <p className="text-xs text-blue-300 italic">Analyzing...</p>
+                <p className="text-sm text-blue-300 italic">Analyzing...</p>
               </div>
             )}
 
@@ -205,7 +245,7 @@ export default function App() {
               const isWarning = /off.?topic|behind|missing|slow|too (much|long|detail)|avoid|red flag/i.test(note);
               const isGood = /good|great|on track|perfect|strong|nice/i.test(note);
               return (
-                <div key={i} className={`rounded-xl px-3 py-2 border text-sm font-medium ${
+                <div key={i} className={`rounded-xl px-3 py-2.5 border text-base font-medium ${
                   isWarning ? 'bg-red-50 border-red-200 text-red-700'
                   : isGood ? 'bg-green-50 border-green-200 text-green-700'
                   : 'bg-blue-50 border-blue-100 text-blue-700'
@@ -216,7 +256,7 @@ export default function App() {
             })}
 
             {!active.isListening && feedback.length === 0 && (
-              <p className="text-xs text-gray-400">Coaching tips will appear here once you start listening.</p>
+              <p className="text-sm text-gray-400">Coaching tips appear here once you start.</p>
             )}
           </div>
 
