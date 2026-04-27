@@ -7,9 +7,10 @@ interface Props {
   settings: AppSettings;
   isListening: boolean;
   onCover: (ids: string[]) => void;
+  activeSectionLanguage?: 'en' | 'es';
 }
 
-export function useSemanticMatcher({ transcript, points, settings, isListening, onCover }: Props) {
+export function useSemanticMatcher({ transcript, points, settings, isListening, onCover, activeSectionLanguage }: Props) {
   // Keep refs so the interval always reads the latest values without restarting
   const transcriptRef = useRef(transcript);
   const pointsRef = useRef(points);
@@ -58,10 +59,14 @@ export function useSemanticMatcher({ transcript, points, settings, isListening, 
         .map(p => `- ID: ${p.id} | Point: "${p.text}"`)
         .join('\n');
 
+      const langNote = activeSectionLanguage === 'es'
+        ? '\nNote: The speaker is currently delivering this section in SPANISH — expect Spanish language, code-switching, and accented English.'
+        : '';
+
       const prompt = `You are helping track whether a speaker has covered specific talking points in an interview.
 
 Talking points to check:
-${pointsList}
+${pointsList}${langNote}
 
 Recent speech transcript:
 "${transcript.slice(-2000)}"

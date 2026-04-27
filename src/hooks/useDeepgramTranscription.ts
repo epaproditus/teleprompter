@@ -5,7 +5,7 @@ interface Result {
   isListening: boolean;
   transcript: string;
   interimText: string;
-  start: (apiKey: string, keyterms: string) => void;
+  start: (apiKey: string) => void;
   stop: () => void;
   error: string | null;
 }
@@ -21,7 +21,7 @@ export function useDeepgramTranscription(): Result {
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
 
-  const start = useCallback(async (apiKey: string, keyterms: string) => {
+  const start = useCallback(async (apiKey: string) => {
     setError(null);
     setTranscript('');
     setInterimText('');
@@ -32,17 +32,11 @@ export function useDeepgramTranscription(): Result {
 
       const client = new DeepgramClient({ apiKey });
 
-      const keytermsArray = keyterms
-        .split(',')
-        .map(k => k.trim())
-        .filter(Boolean);
-
-      const connection = await client.listen.v1.connect({
+      const connection = await (client.listen.v1 as any).connect({
         model: 'nova-3',
         language: 'en',
         smart_format: 'true',
         interim_results: 'true',
-        ...(keytermsArray.length > 0 ? { keyterm: keytermsArray } : {}),
       });
 
       connection.on('open', () => {

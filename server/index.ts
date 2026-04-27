@@ -19,19 +19,23 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       return;
     }
 
-    // Write audio buffer to a temp file (whisper needs a file path)
     await writeFile(tmpPath, req.file.buffer);
 
-    const result = await nodewhisper(tmpPath, {
-      modelName: 'base.en',
-      autoDownloadModelName: 'base.en',
+    const language = req.body?.language;
+    const whisperOpts: any = {
+      modelName: 'base',
+      autoDownloadModelName: 'base',
       whisperOptions: {
         outputInText: true,
         outputInJson: false,
       },
-    });
+    };
+    if (language) {
+      whisperOpts.whisperOptions.language = language;
+    }
 
-    // Strip Whisper timestamp lines like [00:00:00.000 --> 00:00:03.720]
+    const result = await nodewhisper(tmpPath, whisperOpts);
+
     const cleaned = (result ?? '')
       .replace(/\[\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\]/g, '')
       .replace(/\s+/g, ' ')
@@ -49,5 +53,6 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Local Whisper relay running on http://localhost:${PORT}`);
-  console.log('First request will download the base.en model (~142 MB) — one-time only.');
+  console.log('First request will download the base model (~142 MB) — one-time only.');
+  console.log('Language can be set per-request via POST body `{ language: "es" }`.');
 });

@@ -40,12 +40,14 @@ export default function App() {
   const [showContext, setShowContext] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [scriptSections, setScriptSections] = useState<ScriptSection[]>(context.scriptSections ?? []);
-  const [layout, setLayout] = useState(loadLayout);
+  const [layout, setLayout] = useState(loadLayout());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const whisper = useSpeechRecognition(settings.recordingIntervalSec);
   const deepgram = useDeepgramTranscription();
   const active = settings.sttProvider === 'deepgram' ? deepgram : whisper;
+
+  const activeSection = scriptSections.find(s => s.isActive) ?? scriptSections[0];
 
   const handleStart = useCallback(() => {
     setElapsedSeconds(0);
@@ -53,11 +55,11 @@ export default function App() {
     setScriptSections(prev => prev.map(s => ({ ...s, isActive: false, isCovered: false })));
     timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
     if (settings.sttProvider === 'deepgram') {
-      deepgram.start(settings.deepgramApiKey, settings.deepgramKeyterms);
+      deepgram.start(settings.deepgramApiKey);
     } else {
-      whisper.start();
+      whisper.start(scriptSections[0]?.language === 'es' ? 'es' : undefined);
     }
-  }, [settings, deepgram, whisper]);
+  }, [settings, deepgram, whisper, scriptSections]);
 
   const handleStop = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -80,7 +82,7 @@ export default function App() {
     saveContext(c);
   }, []);
 
-  useSemanticMatcher({ transcript: active.transcript, points, settings, isListening: active.isListening, onCover: handleCover });
+  useSemanticMatcher({ transcript: active.transcript, points, settings, isListening: active.isListening, onCover: handleCover, activeSectionLanguage: activeSection?.language });
 
   useScriptTracker({
     transcript: active.transcript,
@@ -89,6 +91,24 @@ export default function App() {
     isListening: active.isListening,
     onUpdate: setScriptSections,
   });
+
+  // Switch Whisper language when the active section changes
+  const prevActiveIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const activeSection = scriptSections.find(s => s.isActive) ?? scriptSections[0];
+    if (!activeSection) return;
+    if (activeSection.id === prevActiveIdRef.current) return;
+    prevActiveIdRef.current = activeSection.id;
+
+    const lang = activeSection.language === 'es' ? 'es' : undefined;
+    if (active.isListening && settings.sttProvider !== 'deepgram') {
+      // Restart whisper with new language - stop first
+      active.stop();
+      setTimeout(() => {
+        (whisper as any).start(lang);
+      }, 100);
+    }
+  }, [scriptSections, active.isListening, settings.sttProvider, whisper]);
 
   const { feedback, loading: feedbackLoading } = useCoachingFeedback({
     transcript: active.transcript,
@@ -196,7 +216,7 @@ export default function App() {
                 <ScriptView sections={scriptSections} />
               </div>
               <DragHandle onDrag={delta => {
-                setLayout(prev => {
+                setLayout((prev: typeof layout) => {
                   const next = { ...prev, scriptW: Math.max(200, Math.min(800, prev.scriptW + delta)) };
                   saveLayout(next);
                   return next;
@@ -226,7 +246,7 @@ export default function App() {
 
           {/* Drag handle before coach */}
           <DragHandle onDrag={delta => {
-            setLayout(prev => {
+            setLayout((prev: typeof layout) => {
               const next = { ...prev, coachW: Math.max(150, Math.min(500, prev.coachW - delta)) };
               saveLayout(next);
               return next;

@@ -31,13 +31,18 @@ export function useScriptTracker({ transcript, sections, settings, isListening, 
       if (!s.apiKey || !transcript.trim()) return;
 
       const sectionList = sections
-        .map((sec, i) => `${i + 1}. [ID: ${sec.id}] ${sec.title}: "${sec.content.slice(0, 120)}..."`)
+        .map((sec, i) => `${i + 1}. [ID: ${sec.id}] ${sec.title}${sec.language === 'es' ? ' [SPANISH]' : ''}: "${sec.content.slice(0, 120)}..."`)
         .join('\n');
+
+      const hasSpanish = sections.some(s => s.language === 'es');
+      const langNote = hasSpanish
+        ? '\nNote: Some sections are in Spanish — the speaker will use Spanish when covering those sections.'
+        : '';
 
       const prompt = `You are tracking where a speaker is in their prepared script.
 
 Script sections:
-${sectionList}
+${sectionList}${langNote}
 
 Recent transcript (last ~300 words):
 "${transcript.slice(-1200)}"

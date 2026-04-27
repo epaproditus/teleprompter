@@ -4,7 +4,7 @@ interface UseSpeechRecognitionResult {
   isListening: boolean;
   transcript: string;
   interimText: string;
-  start: () => void;
+  start: (language?: string) => void;
   stop: () => void;
   error: string | null;
 }
@@ -18,6 +18,7 @@ export function useSpeechRecognition(intervalSec = 5): UseSpeechRecognitionResul
 
   const streamRef = useRef<MediaStream | null>(null);
   const isListeningRef = useRef(false);
+  const languageRef = useRef<string | undefined>(undefined);
 
   const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
     ? 'audio/webm;codecs=opus'
@@ -42,6 +43,7 @@ export function useSpeechRecognition(intervalSec = 5): UseSpeechRecognitionResul
       if (blob.size > 1000) {
         const formData = new FormData();
         formData.append('audio', blob, 'audio.webm');
+        if (languageRef.current) formData.append('language', languageRef.current);
         fetch('http://localhost:3001/transcribe', { method: 'POST', body: formData })
           .then(r => r.json())
           .then(data => {
@@ -59,8 +61,9 @@ export function useSpeechRecognition(intervalSec = 5): UseSpeechRecognitionResul
     }, CHUNK_INTERVAL_MS);
   }
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (language?: string) => {
     setError(null);
+    languageRef.current = language;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;

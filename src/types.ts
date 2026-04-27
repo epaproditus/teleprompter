@@ -12,6 +12,7 @@ export interface ScriptSection {
   content: string;
   isActive: boolean;
   isCovered: boolean;
+  language?: 'en' | 'es';
 }
 
 export interface TimeMilestone {

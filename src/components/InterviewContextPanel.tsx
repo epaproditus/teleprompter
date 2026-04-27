@@ -56,12 +56,12 @@ ${draft.script}
 """
 
 Rules:
-- Aim for 4-8 sections
+- Aim for 4 sections exactly (you must produce exactly 4)
 - Each section should be a coherent chunk (intro, one main topic, closing, etc.)
 - Give each section a short title (3-6 words)
 - Keep the original wording in content — don't rewrite
 
-Return ONLY a JSON array: [{"title": "...", "content": "..."}]`;
+Return ONLY a JSON array with exactly 4 items: [{"title": "...", "content": "..."}]`;
 
     const isOpenAI = settings.apiType === 'openai';
     const url = isOpenAI ? `${settings.apiBaseUrl}/v1/chat/completions` : `${settings.apiBaseUrl}/v1/messages`;
@@ -92,6 +92,7 @@ Return ONLY a JSON array: [{"title": "...", "content": "..."}]`;
         content: s.content,
         isActive: false,
         isCovered: false,
+        language: undefined,
       }));
       setDraft(prev => ({ ...prev, scriptSections: sections }));
     } catch (err) {
@@ -100,6 +101,14 @@ Return ONLY a JSON array: [{"title": "...", "content": "..."}]`;
     } finally {
       setParsing(false);
     }
+  }
+
+  function updateScriptSection(i: number, field: keyof ScriptSection, value: any) {
+    setDraft(prev => {
+      const sections = [...prev.scriptSections];
+      sections[i] = { ...sections[i], [field]: value };
+      return { ...prev, scriptSections: sections };
+    });
   }
 
   return (
@@ -170,14 +179,27 @@ Return ONLY a JSON array: [{"title": "...", "content": "..."}]`;
 
           {draft.scriptSections.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <p className="text-xs text-gray-500 font-medium">{draft.scriptSections.length} sections parsed:</p>
+              <p className="text-xs text-gray-500 font-medium">
+                {draft.scriptSections.length} sections — tap the language chip to flag sections in Spanish
+              </p>
               {draft.scriptSections.map((s, i) => (
-                <div key={s.id} className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2 text-sm">
+                <div key={s.id} className="flex items-start gap-2 bg-gray-50 rounded-lg px-3 py-2.5 text-sm">
                   <span className="text-gray-400 font-mono text-xs mt-0.5">{i + 1}</span>
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-700">{s.title}</p>
                     <p className="text-gray-400 text-xs line-clamp-1">{s.content}</p>
                   </div>
+                  <button
+                    onClick={() => updateScriptSection(i, 'language', s.language === 'es' ? undefined : 'es')}
+                    className={`flex-shrink-0 text-xs font-medium px-2 py-0.5 rounded-full border transition-colors ${
+                      s.language === 'es'
+                        ? 'bg-amber-100 border-amber-400 text-amber-700'
+                        : 'border-gray-300 text-gray-400 hover:border-gray-400 hover:text-gray-600'
+                    }`}
+                    title={s.language === 'es' ? 'Click to mark as English' : 'Click to mark as Spanish'}
+                  >
+                    {s.language === 'es' ? 'ES' : 'EN'}
+                  </button>
                 </div>
               ))}
             </div>
