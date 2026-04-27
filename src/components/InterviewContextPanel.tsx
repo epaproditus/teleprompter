@@ -15,6 +15,7 @@ function generateId() {
 export default function InterviewContextPanel({ context, settings, onSave, onClose }: Props) {
   const [draft, setDraft] = useState<InterviewContext>({
     ...context,
+    targetDurationMin: context.targetDurationMin,
     milestones: [...context.milestones],
     scriptSections: [...(context.scriptSections ?? [])],
   });
@@ -138,6 +139,14 @@ Return ONLY a JSON array with exactly 4 items: [{"title": "...", "content": "...
             <span className="text-sm text-gray-700">Interview type</span>
             <input type="text" value={draft.interviewType} onChange={e => update('interviewType', e.target.value)}
               placeholder="e.g. behavioral, technical"
+              className="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-700">Target duration (min)</span>
+            <input type="number" min={1} max={120} value={draft.targetDurationMin ?? ''}
+              onChange={e => setDraft(prev => ({ ...prev, targetDurationMin: e.target.value ? Number(e.target.value) : undefined }))}
+              placeholder="e.g. 5"
               className="border border-gray-300 rounded-lg px-3 py-2 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400" />
           </label>
         </div>

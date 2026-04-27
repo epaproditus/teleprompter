@@ -28,6 +28,7 @@ export interface InterviewContext {
   milestones: TimeMilestone[];
   script: string;
   scriptSections: ScriptSection[];
+  targetDurationMin?: number;   // e.g. 5 — total session length for time-aware coaching
 }
 
 export interface AppSettings {

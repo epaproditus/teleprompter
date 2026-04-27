@@ -43,14 +43,26 @@ export function useCoachingFeedback({ transcript, points, settings, context, isL
       const covered = points.filter(p => p.isCovered).map(p => p.text);
       const uncovered = points.filter(p => !p.isCovered).map(p => p.text);
       const elapsedMin = Math.floor(elapsed / 60);
+      const elapsedSec = elapsed % 60;
+      const targetMin = contextRef.current.targetDurationMin;
+
+      // Time-aware progress: what % through the interview are you?
+      let timeContext = '';
+      if (targetMin && targetMin > 0) {
+        const pct = Math.round((elapsed / 60 / targetMin) * 100);
+        const remaining = Math.max(0, targetMin * 60 - elapsed);
+        const remMin = Math.floor(remaining / 60);
+        const remSec = remaining % 60;
+        const pace = Math.round((covered.length / Math.max(1, elapsed / 60)) * 60); // points per minute
+        timeContext = `Time context: Target is ${targetMin} min total. Elapsed: ${elapsedMin}:${String(elapsedSec).padStart(2, '0')} (${pct}% done). ${remMin}:${String(remMin > 0 ? remSec : 0).padStart(2, '0')} remaining. Covering ~${pace} points/min.`;
+      }
 
       const milestonePart = ctx.milestones.length > 0
         ? `Time milestones:\n${ctx.milestones.map(m => `- By ${m.minuteMark} min: ${m.goal}`).join('\n')}`
         : '';
 
       const prompt = `You are a real-time interview coach. The candidate is ${elapsedMin} minutes into a ${ctx.interviewType || 'job'} interview for ${ctx.role || 'a role'}${ctx.company ? ` at ${ctx.company}` : ''}.
-
-${ctx.notes ? `Context: ${ctx.notes}\n` : ''}${milestonePart}
+${timeContext ? timeContext + '\n' : ''}${ctx.notes ? `Context: ${ctx.notes}\n` : ''}${milestonePart}
 
 Talking points covered so far: ${covered.length > 0 ? covered.join(', ') : 'none yet'}
 Talking points not yet covered: ${uncovered.length > 0 ? uncovered.join(', ') : 'all covered!'}
@@ -59,6 +71,8 @@ Recent transcript (last ~500 words):
 "${transcript.slice(-2000)}"
 
 Return 2-4 coaching notes as a JSON array of SHORT strings (under 8 words each). Each note is one glanceable observation. No markdown, no punctuation, no explanation — just the note itself.
+
+${timeContext ? 'CRITICAL: Reference the time context in your coaching. If they are behind schedule, tell them to speed up and simplify. If they are ahead, tell them to expand. Include time-based notes like "Slow down — ahead of pace" or "Running long — move on."' : ''}
 
 Examples of good notes: "Off topic", "Mention the team size", "Running behind on intro", "Good pace", "Bring up cost savings", "Too much detail here"
 

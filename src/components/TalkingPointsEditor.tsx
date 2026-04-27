@@ -9,9 +9,10 @@ interface Props {
   onAdd: (text: string) => void;
   onDelete: (id: string) => void;
   onReplace: (points: string[]) => void;
+  onResetRound?: () => void;
 }
 
-export default function TalkingPointsEditor({ points, settings, context, scriptSections, onAdd, onDelete, onReplace }: Props) {
+export default function TalkingPointsEditor({ points, settings, context, scriptSections, onAdd, onDelete, onReplace, onResetRound }: Props) {
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -42,25 +43,26 @@ export default function TalkingPointsEditor({ points, settings, context, scriptS
 
     if (useScriptMode) {
       const sectionList = scriptSections
-        .map((s, i) => `${i + 1}. [${s.language === 'es' ? 'SPANISH' : 'ENGLISH'}] ${s.title}: "${s.content}"`)
-        .join('\n');
-      prompt = `You are helping someone prepare for a job interview. Your job is to generate talking points that map to specific sections of their prepared script.
+        .map((s, i) => `${i + 1}. [${s.language === 'es' ? 'SPANISH' : 'ENGLISH'}] ${s.title}:\n"${s.content}"`)
+        .join('\n\n');
+      prompt = `You are helping someone prepare talking points for a job interview. The candidate has a prepared script broken into sections. Your job is to extract EVERY distinct thing the candidate needs to say as a separate talking point.
 
 Script sections:
 ${sectionList}
 
+Your job: For each section, list EVERY individual topic, fact, story, or phrase the candidate must cover. Think of it as: "if they don't say this, they've missed something important." Break everything into separate, specific points. Be exhaustive.
+
 Rules:
-- Generate exactly as many talking points as there are sections above (${scriptSections.length} points)
-- Each talking point should capture the KEY things to say when delivering that section
-- Max 15 words per point
-- Short and specific — something they can check off when mentioned
-- If a section is marked SPANISH, the point should be in Spanish
-- Return ONLY a JSON array of strings, one per section in order
+- Each talking point is ONE specific thing (a fact, a story, a phrase, a topic)
+- Max 12 words per point
+- If a section is marked SPANISH, write points in Spanish
+- Group points by section in your output, but list each one as a separate item
+- Aim for 8-15 total points across all sections (roughly 2-5 per section depending on content length)
+- Include specific details from the script content (names, numbers, metrics, phrases to say verbatim)
 
-Good example for an English section: "Mention 3 years of Go experience and recent promotion"
-Good example for a Spanish section: "Hablar de 5 años de experiencia en Kubernetes y liderazgo de equipo"
-
-Return ONLY a JSON array with ${scriptSections.length} items.`;
+Return ONLY a JSON array of strings — each string is one talking point in order.
+Format example for 2 English sections + 1 Spanish section: ["Point about project X for section 1", "Point about initiative Y for section 1", "Mention promotion in section 1", "Hablar del proyecto de microservices", "Describir el equipo de 5 personas", "Cover quick summary point", "Final closing thought"]
+Return ONLY the JSON array with ${scriptSections.length > 0 ? '8-15 items' : 'items'}, nothing else.`;
     } else {
       const hasContext = context.role || context.company || context.interviewType || context.notes;
       if (!hasContext) {
@@ -104,7 +106,7 @@ Bad example: ["Led a team and reduced latency while also shipping the rewrite on
         headers,
         body: JSON.stringify({
           model: settings.model,
-          max_tokens: 512,
+          max_tokens: 1024,
           messages: [{ role: 'user', content: prompt }],
         }),
       });
@@ -136,11 +138,32 @@ Bad example: ["Led a team and reduced latency while also shipping the rewrite on
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-800">Talking Points</h2>
-        <button
-          onClick={handleGenerate}
-          disabled={generating}
-          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
+        <div className="flex items-center gap-3">
+          {points.length > 0 && (
+            <button
+              onClick={() => {
+                if (window.confirm('Clear all talking points to start fresh?')) {
+                  onReplace([]);
+                }
+              }}
+              className="text-sm text-gray-400 hover:text-red-500 transition-colors"
+            >
+              Clear all
+            </button>
+          )}
+          {points.some(p => p.isCovered) && onResetRound && (
+            <button
+              onClick={onResetRound}
+              className="text-sm text-gray-400 hover:text-orange-500 transition-colors"
+            >
+              Reset round
+            </button>
+          )}
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
           {generating ? (
             <>
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -153,6 +176,7 @@ Bad example: ["Led a team and reduced latency while also shipping the rewrite on
             <>✦ Generate with AI</>
           )}
         </button>
+        </div>
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}

@@ -78,6 +78,12 @@ export default function App() {
     });
   }, []);
 
+  const handleResetRound = useCallback(() => {
+    const reset = points.map(p => ({ ...p, isCovered: false, coveredAt: undefined, confidence: 0 }));
+    setPoints(reset);
+    savePoints(reset);
+  }, [points]);
+
   const handleContextSave = useCallback((c: InterviewContext) => {
     setContext(c);
     setScriptSections(c.scriptSections ?? []);
@@ -244,6 +250,7 @@ export default function App() {
               onAdd={addPoint}
               onDelete={deletePoint}
               onReplace={replacePoints}
+              onResetRound={handleResetRound}
             />
             <div className="flex flex-col gap-3">
               {active.error && <p className="text-red-500 text-sm">{active.error}</p>}
