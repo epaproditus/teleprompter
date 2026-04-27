@@ -50,6 +50,8 @@ export const DEFAULT_CONTEXT: InterviewContext = {
   interviewType: '',
   notes: '',
   milestones: [],
+  script: '',
+  scriptSections: [],
 };
 
 export function loadContext(): InterviewContext {

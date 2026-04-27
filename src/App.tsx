@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { TalkingPoint, AppSettings, InterviewContext } from './types';
+import type { TalkingPoint, AppSettings, InterviewContext, ScriptSection } from './types';
 import { loadPoints, savePoints, loadSettings, saveSettings, loadContext, saveContext } from './services/storage';
 import TalkingPointsEditor from './components/TalkingPointsEditor';
 import LiveTranscript from './components/LiveTranscript';
 import SettingsPanel from './components/SettingsPanel';
 import InterviewContextPanel from './components/InterviewContextPanel';
+import ScriptView from './components/ScriptView';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useDeepgramTranscription } from './hooks/useDeepgramTranscription';
 import { useSemanticMatcher } from './hooks/useSemanticMatcher';
 import { useCoachingFeedback } from './hooks/useCoachingFeedback';
+import { useScriptTracker } from './hooks/useScriptTracker';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 10);
@@ -21,6 +23,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showContext, setShowContext] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [scriptSections, setScriptSections] = useState<ScriptSection[]>(context.scriptSections ?? []);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const whisper = useSpeechRecognition(settings.recordingIntervalSec);
@@ -29,6 +32,8 @@ export default function App() {
 
   const handleStart = useCallback(() => {
     setElapsedSeconds(0);
+    // Reset script section state
+    setScriptSections(prev => prev.map(s => ({ ...s, isActive: false, isCovered: false })));
     timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
     if (settings.sttProvider === 'deepgram') {
       deepgram.start(settings.deepgramApiKey, settings.deepgramKeyterms);
@@ -52,7 +57,21 @@ export default function App() {
     });
   }, []);
 
+  const handleContextSave = useCallback((c: InterviewContext) => {
+    setContext(c);
+    setScriptSections(c.scriptSections ?? []);
+    saveContext(c);
+  }, []);
+
   useSemanticMatcher({ transcript: active.transcript, points, settings, isListening: active.isListening, onCover: handleCover });
+
+  useScriptTracker({
+    transcript: active.transcript,
+    sections: scriptSections,
+    settings,
+    isListening: active.isListening,
+    onUpdate: setScriptSections,
+  });
 
   const { feedback, loading: feedbackLoading } = useCoachingFeedback({
     transcript: active.transcript,
@@ -93,6 +112,7 @@ export default function App() {
   const elapsedMin = Math.floor(elapsedSeconds / 60);
   const elapsedSec = elapsedSeconds % 60;
   const coveredCount = points.filter(p => p.isCovered).length;
+  const hasScript = scriptSections.length > 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col py-8 px-4">
@@ -100,10 +120,10 @@ export default function App() {
         <SettingsPanel settings={settings} onSave={s => { setSettings(s); saveSettings(s); }} onClose={() => setShowSettings(false)} />
       )}
       {showContext && (
-        <InterviewContextPanel context={context} onSave={c => { setContext(c); saveContext(c); }} onClose={() => setShowContext(false)} />
+        <InterviewContextPanel context={context} settings={settings} onSave={handleContextSave} onClose={() => setShowContext(false)} />
       )}
 
-      <div className="w-full max-w-6xl mx-auto flex flex-col gap-6">
+      <div className="w-full max-w-7xl mx-auto flex flex-col gap-6">
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -133,12 +153,26 @@ export default function App() {
           </div>
         </div>
 
-        {/* Two-column layout */}
+        {/* Main layout */}
         <div className="flex gap-6 items-start">
 
-          {/* Left: main content */}
+          {/* Script panel — only shown if script is loaded */}
+          {hasScript && (
+            <div className="w-72 flex-shrink-0 sticky top-8 max-h-[calc(100vh-8rem)] overflow-y-auto">
+              <ScriptView sections={scriptSections} />
+            </div>
+          )}
+
+          {/* Center: talking points + controls */}
           <div className="flex-1 flex flex-col gap-6 min-w-0">
-            <TalkingPointsEditor points={points} settings={settings} context={context} onAdd={addPoint} onDelete={deletePoint} onReplace={replacePoints} />
+            <TalkingPointsEditor
+              points={points}
+              settings={settings}
+              context={context}
+              onAdd={addPoint}
+              onDelete={deletePoint}
+              onReplace={replacePoints}
+            />
 
             <div className="flex flex-col gap-3">
               {active.error && <p className="text-red-500 text-sm">{active.error}</p>}
@@ -158,7 +192,7 @@ export default function App() {
           </div>
 
           {/* Right: coaching sidebar */}
-          <div className="w-56 flex-shrink-0 flex flex-col gap-3 sticky top-8">
+          <div className="w-52 flex-shrink-0 flex flex-col gap-3 sticky top-8">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Coach</p>
 
             {feedbackLoading && feedback.length === 0 && (
@@ -171,16 +205,11 @@ export default function App() {
               const isWarning = /off.?topic|behind|missing|slow|too (much|long|detail)|avoid|red flag/i.test(note);
               const isGood = /good|great|on track|perfect|strong|nice/i.test(note);
               return (
-                <div
-                  key={i}
-                  className={`rounded-xl px-3 py-2 border text-sm font-medium ${
-                    isWarning
-                      ? 'bg-red-50 border-red-200 text-red-700'
-                      : isGood
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : 'bg-blue-50 border-blue-100 text-blue-700'
-                  }`}
-                >
+                <div key={i} className={`rounded-xl px-3 py-2 border text-sm font-medium ${
+                  isWarning ? 'bg-red-50 border-red-200 text-red-700'
+                  : isGood ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-blue-50 border-blue-100 text-blue-700'
+                }`}>
                   {note}
                 </div>
               );

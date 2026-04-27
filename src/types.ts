@@ -6,6 +6,14 @@ export interface TalkingPoint {
   confidence: number;
 }
 
+export interface ScriptSection {
+  id: string;
+  title: string;
+  content: string;
+  isActive: boolean;
+  isCovered: boolean;
+}
+
 export interface TimeMilestone {
   minuteMark: number;   // e.g. 5
   goal: string;         // e.g. "Should have finished intro and mentioned experience"
@@ -14,9 +22,11 @@ export interface TimeMilestone {
 export interface InterviewContext {
   role: string;
   company: string;
-  interviewType: string;  // e.g. "behavioral", "technical", "HR screen"
-  notes: string;          // anything else — prep notes, things to avoid, etc.
+  interviewType: string;
+  notes: string;
   milestones: TimeMilestone[];
+  script: string;
+  scriptSections: ScriptSection[];
 }
 
 export interface AppSettings {
