@@ -143,19 +143,32 @@ export default function App() {
       <div className="w-full max-w-7xl mx-auto flex flex-col gap-6">
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-shrink-0">
             <h1 className="text-2xl font-bold text-gray-900">Interview Teleprompter</h1>
             {context.role && (
               <p className="text-sm text-blue-600 font-medium">{context.role}{context.company ? ` · ${context.company}` : ''}</p>
             )}
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Start/Stop button in header */}
+          <div className="flex items-center gap-3 flex-1 justify-center">
+            <button
+              onClick={active.isListening ? handleStop : handleStart}
+              className={`px-8 py-2.5 rounded-lg text-white font-semibold transition-colors text-sm ${
+                active.isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'
+              }`}
+            >
+              {active.isListening ? 'Stop Listening' : 'Start Listening'}
+            </button>
             {active.isListening && (
-              <span className="text-sm text-gray-500">
-                {String(elapsedMin).padStart(2, '0')}:{String(elapsedSec).padStart(2, '0')} &nbsp;·&nbsp; {coveredCount}/{points.length} covered
+              <span className="text-sm text-gray-500 whitespace-nowrap">
+                {String(elapsedMin).padStart(2, '0')}:{String(elapsedSec).padStart(2, '0')} · {coveredCount}/{points.length} covered
               </span>
             )}
+          </div>
+
+          <div className="flex items-center gap-3 flex-shrink-0">
             <button onClick={() => setShowContext(true)} title="Interview context" className="text-gray-400 hover:text-gray-600 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -207,14 +220,6 @@ export default function App() {
               {!settings.apiKey && (
                 <p className="text-amber-600 text-sm">No API key set — open Settings to add one.</p>
               )}
-              <button
-                onClick={active.isListening ? handleStop : handleStart}
-                className={`w-full py-3 rounded-lg text-white font-semibold transition-colors ${
-                  active.isListening ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                {active.isListening ? 'Stop Listening' : 'Start Listening'}
-              </button>
               <LiveTranscript transcript={active.transcript} interimText={active.interimText} isListening={active.isListening} />
             </div>
           </div>
