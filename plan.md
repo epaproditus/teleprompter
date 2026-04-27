@@ -16,9 +16,10 @@ Plan → Build one thing → Test it in browser → git commit → Repeat
 - [x] **Step 3** — Talking points editor with localStorage
 - [x] **Step 4** — Local Whisper transcription via relay server (continuous, no gaps)
 - [x] **Step 5** — Semantic matching via configurable LLM API (Anthropic or OpenAI format)
-- [x] **Step 6** — Settings panel (STT provider, intervals, API key/URL/model)
-- [ ] **Step 7** — Interview context panel (role, company, time targets)
-- [ ] **Step 8** — LLM coaching feedback (am I on track? what am I missing?)
+- [x] **Step 6** — Settings panel (STT provider, intervals, API key/URL/model, feedback frequency)
+- [x] **Step 7** — Interview context panel (role, company, interview type, notes, time milestones)
+- [x] **Step 8** — LLM coaching feedback (runs on adjustable interval, uses context + progress)
+- [ ] **Step 9** — AI-generated talking points (LLM suggests points from context, user edits before session)
 
 ---
 

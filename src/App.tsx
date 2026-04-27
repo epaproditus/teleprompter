@@ -84,6 +84,12 @@ export default function App() {
     savePoints(updated);
   }
 
+  function replacePoints(texts: string[]) {
+    const updated = texts.map(text => ({ id: generateId(), text, isCovered: false, confidence: 0 }));
+    setPoints(updated);
+    savePoints(updated);
+  }
+
   const elapsedMin = Math.floor(elapsedSeconds / 60);
   const elapsedSec = elapsedSeconds % 60;
   const coveredCount = points.filter(p => p.isCovered).length;
@@ -125,7 +131,7 @@ export default function App() {
           </div>
         </div>
 
-        <TalkingPointsEditor points={points} onAdd={addPoint} onDelete={deletePoint} />
+        <TalkingPointsEditor points={points} settings={settings} context={context} onAdd={addPoint} onDelete={deletePoint} onReplace={replacePoints} />
 
         {/* Controls */}
         <div className="flex flex-col gap-4">
