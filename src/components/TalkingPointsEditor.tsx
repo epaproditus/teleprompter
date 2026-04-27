@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import type { TalkingPoint, AppSettings, InterviewContext } from '../types';
+import type { TalkingPoint, AppSettings, InterviewContext, ScriptSection } from '../types';
 
 interface Props {
   points: TalkingPoint[];
   settings: AppSettings;
   context: InterviewContext;
+  scriptSections: ScriptSection[];
   onAdd: (text: string) => void;
   onDelete: (id: string) => void;
   onReplace: (points: string[]) => void;
 }
 
-export default function TalkingPointsEditor({ points, settings, context, onAdd, onDelete, onReplace }: Props) {
+export default function TalkingPointsEditor({ points, settings, context, scriptSections, onAdd, onDelete, onReplace }: Props) {
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -32,16 +33,42 @@ export default function TalkingPointsEditor({ points, settings, context, onAdd, 
       return;
     }
 
-    const hasContext = context.role || context.company || context.interviewType || context.notes;
-    if (!hasContext) {
-      setError('Fill in at least a role or interview type in the context panel (📄) first.');
-      return;
-    }
-
     setGenerating(true);
     setError('');
 
-    const prompt = `You are helping someone prepare for a job interview. Generate 6-8 talking points they should cover.
+    // Derive talking points from script sections if they exist, otherwise use context
+    const useScriptMode = scriptSections.length > 0;
+    let prompt: string;
+
+    if (useScriptMode) {
+      const sectionList = scriptSections
+        .map((s, i) => `${i + 1}. [${s.language === 'es' ? 'SPANISH' : 'ENGLISH'}] ${s.title}: "${s.content}"`)
+        .join('\n');
+      prompt = `You are helping someone prepare for a job interview. Your job is to generate talking points that map to specific sections of their prepared script.
+
+Script sections:
+${sectionList}
+
+Rules:
+- Generate exactly as many talking points as there are sections above (${scriptSections.length} points)
+- Each talking point should capture the KEY things to say when delivering that section
+- Max 15 words per point
+- Short and specific — something they can check off when mentioned
+- If a section is marked SPANISH, the point should be in Spanish
+- Return ONLY a JSON array of strings, one per section in order
+
+Good example for an English section: "Mention 3 years of Go experience and recent promotion"
+Good example for a Spanish section: "Hablar de 5 años de experiencia en Kubernetes y liderazgo de equipo"
+
+Return ONLY a JSON array with ${scriptSections.length} items.`;
+    } else {
+      const hasContext = context.role || context.company || context.interviewType || context.notes;
+      if (!hasContext) {
+        setError('Fill in at least a role or interview type in the context panel (📄) first, or add a script with sections.');
+        setGenerating(false);
+        return;
+      }
+      prompt = `You are helping someone prepare for a job interview. Generate 6-8 talking points they should cover.
 
 Interview details:
 - Role: ${context.role || 'not specified'}
@@ -58,6 +85,7 @@ Rules:
 Return ONLY a JSON array of short strings.
 Good example: ["Led team of 5 engineers", "Reduced API latency by 40%", "Shipped payments rewrite on time", "Experience with Go and distributed systems"]
 Bad example: ["Led a team and reduced latency while also shipping the rewrite on time"]`;
+    }
 
     const isOpenAI = settings.apiType === 'openai';
     const url = isOpenAI

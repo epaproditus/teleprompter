@@ -40,6 +40,7 @@ export default function App() {
   const [showContext, setShowContext] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [scriptSections, setScriptSections] = useState<ScriptSection[]>(context.scriptSections ?? []);
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [layout, setLayout] = useState(loadLayout());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -51,6 +52,7 @@ export default function App() {
 
   const handleStart = useCallback(() => {
     setElapsedSeconds(0);
+    setSelectedSectionId(null);
     // Reset script section state
     setScriptSections(prev => prev.map(s => ({ ...s, isActive: false, isCovered: false })));
     timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
@@ -92,10 +94,13 @@ export default function App() {
     onUpdate: setScriptSections,
   });
 
-  // Switch Whisper language when the active section changes
+  // Switch Whisper language / respect manual section selection when active section changes
   const prevActiveIdRef = useRef<string | null>(null);
   useEffect(() => {
-    const activeSection = scriptSections.find(s => s.isActive) ?? scriptSections[0];
+    // Manual selection takes priority; fall back to AI-tracked active
+    const activeSection = selectedSectionId
+      ? scriptSections.find(s => s.id === selectedSectionId)
+      : (scriptSections.find(s => s.isActive) ?? scriptSections[0]);
     if (!activeSection) return;
     if (activeSection.id === prevActiveIdRef.current) return;
     prevActiveIdRef.current = activeSection.id;
@@ -108,7 +113,7 @@ export default function App() {
         (whisper as any).start(lang);
       }, 100);
     }
-  }, [scriptSections, active.isListening, settings.sttProvider, whisper]);
+  }, [scriptSections, selectedSectionId, active.isListening, settings.sttProvider, whisper]);
 
   const { feedback, loading: feedbackLoading } = useCoachingFeedback({
     transcript: active.transcript,
@@ -213,7 +218,11 @@ export default function App() {
                 className="flex-shrink-0 h-full overflow-y-auto pr-2"
                 style={{ width: layout.scriptW }}
               >
-                <ScriptView sections={scriptSections} />
+                <ScriptView
+                  sections={scriptSections}
+                  selectedSectionId={selectedSectionId}
+                  onSelectSection={setSelectedSectionId}
+                />
               </div>
               <DragHandle onDrag={delta => {
                 setLayout((prev: typeof layout) => {
@@ -231,6 +240,7 @@ export default function App() {
               points={points}
               settings={settings}
               context={context}
+              scriptSections={scriptSections}
               onAdd={addPoint}
               onDelete={deletePoint}
               onReplace={replacePoints}
