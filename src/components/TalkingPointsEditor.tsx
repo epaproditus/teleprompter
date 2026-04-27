@@ -61,8 +61,8 @@ Rules:
 - Include specific details from the script content (names, numbers, metrics, phrases to say verbatim)
 
 Return ONLY a JSON array of strings — each string is one talking point in order.
-Format example for 2 English sections + 1 Spanish section: ["Point about project X for section 1", "Point about initiative Y for section 1", "Mention promotion in section 1", "Hablar del proyecto de microservices", "Describir el equipo de 5 personas", "Cover quick summary point", "Final closing thought"]
-Return ONLY the JSON array with ${scriptSections.length > 0 ? '8-15 items' : 'items'}, nothing else.`;
+Format example: ["Lead with 3 years Go experience", "Mention recent promotion to senior", "Project X: reduced latency 40%", "Team of 5 across 3 timezones", "Hablar del proyecto de microservices en AWS", "Describir el equipo de 5 personas", "Cerrar con disponibilidad inmediata"]
+IMPORTANT: You MUST return at least 10 items. Generate as many distinct talking points as the script content warrants — do not limit yourself to one per section.`;
     } else {
       const hasContext = context.role || context.company || context.interviewType || context.notes;
       if (!hasContext) {
