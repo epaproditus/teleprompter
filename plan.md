@@ -1,7 +1,7 @@
 # Interview Teleprompter with AI Speech Recognition
 
 ## Current Status
-**Stage: In progress.** Steps 1 & 2 complete. Building talking points UI next.
+**Stage: Core MVP working.** Transcription + semantic matching functional. Building interview context + LLM feedback next.
 
 ## How We're Building This (Workflow)
 One feature at a time. Test it. Commit to git. Then move on. Never skip ahead.
@@ -11,11 +11,14 @@ Plan → Build one thing → Test it in browser → git commit → Repeat
 ```
 
 ## Immediate Next Steps
-- [x] **Step 1** — Run `npm create vite@latest . -- --template react-ts` in this folder
-- [x] **Step 2** — Run `npm install && npm run dev`, open http://localhost:5173
-- [ ] **Step 3** — Build the talking points UI (input form + list display + localStorage save)
-- [ ] **Step 4** — Add Web Speech API (speak → see text appear)
-- [ ] **Step 5** — Add Claude semantic matching (text → checkmarks appear)
+- [x] **Step 1** — Project scaffold (Vite + React + TypeScript + Tailwind)
+- [x] **Step 2** — Dev server running at http://localhost:5173
+- [x] **Step 3** — Talking points editor with localStorage
+- [x] **Step 4** — Local Whisper transcription via relay server (continuous, no gaps)
+- [x] **Step 5** — Semantic matching via configurable LLM API (Anthropic or OpenAI format)
+- [x] **Step 6** — Settings panel (STT provider, intervals, API key/URL/model)
+- [ ] **Step 7** — Interview context panel (role, company, time targets)
+- [ ] **Step 8** — LLM coaching feedback (am I on track? what am I missing?)
 
 ---
 

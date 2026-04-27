@@ -31,7 +31,13 @@ app.post('/transcribe', upload.single('audio'), async (req, res) => {
       },
     });
 
-    res.json({ text: result ?? '' });
+    // Strip Whisper timestamp lines like [00:00:00.000 --> 00:00:03.720]
+    const cleaned = (result ?? '')
+      .replace(/\[\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    res.json({ text: cleaned });
   } catch (err: any) {
     console.error('Transcription error:', err?.message || err);
     res.status(500).json({ error: 'Transcription failed' });

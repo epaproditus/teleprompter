@@ -50,15 +50,28 @@ export default function TalkingPointsEditor({ points, onAdd, onDelete }: Props) 
         {points.map(point => (
           <li
             key={point.id}
-            className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3"
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 transition-colors ${
+              point.isCovered
+                ? 'bg-green-50 border-green-200'
+                : 'bg-white border-gray-200'
+            }`}
           >
-            <span className="text-gray-800">{point.text}</span>
-            <button
-              onClick={() => onDelete(point.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors ml-4 text-sm"
-            >
-              Remove
-            </button>
+            <div className="flex items-center gap-3">
+              <span className={`text-lg ${point.isCovered ? 'text-green-500' : 'text-gray-300'}`}>
+                {point.isCovered ? '✓' : '○'}
+              </span>
+              <span className={point.isCovered ? 'text-green-800 line-through' : 'text-gray-800'}>
+                {point.text}
+              </span>
+            </div>
+            {!point.isCovered && (
+              <button
+                onClick={() => onDelete(point.id)}
+                className="text-gray-400 hover:text-red-500 transition-colors ml-4 text-sm"
+              >
+                Remove
+              </button>
+            )}
           </li>
         ))}
       </ul>
