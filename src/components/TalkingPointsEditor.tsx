@@ -41,7 +41,7 @@ export default function TalkingPointsEditor({ points, settings, context, onAdd, 
     setGenerating(true);
     setError('');
 
-    const prompt = `You are helping someone prepare for a job interview. Generate a list of 6-8 concise talking points they should make sure to cover.
+    const prompt = `You are helping someone prepare for a job interview. Generate 6-8 talking points they should cover.
 
 Interview details:
 - Role: ${context.role || 'not specified'}
@@ -49,9 +49,15 @@ Interview details:
 - Interview type: ${context.interviewType || 'not specified'}
 - Additional context: ${context.notes || 'none'}
 
-Return ONLY a JSON array of strings, each being one talking point. Each point should be specific, action-oriented, and something they can naturally weave into conversation. No numbering, no bullet symbols — just the text.
+Rules:
+- Each point is ONE distinct idea, max 12 words
+- Short and specific — something they can check off when mentioned
+- No full sentences, no punctuation at the end
+- No combining multiple ideas into one point
 
-Example format: ["Led a team of 5 engineers on a payment rewrite", "Reduced API latency by 40% through caching"]`;
+Return ONLY a JSON array of short strings.
+Good example: ["Led team of 5 engineers", "Reduced API latency by 40%", "Shipped payments rewrite on time", "Experience with Go and distributed systems"]
+Bad example: ["Led a team and reduced latency while also shipping the rewrite on time"]`;
 
     const isOpenAI = settings.apiType === 'openai';
     const url = isOpenAI

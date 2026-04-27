@@ -11,7 +11,7 @@ interface Props {
 }
 
 export function useCoachingFeedback({ transcript, points, settings, context, isListening, elapsedSeconds }: Props) {
-  const [feedback, setFeedback] = useState<string>('');
+  const [feedback, setFeedback] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   const transcriptRef = useRef(transcript);
@@ -58,7 +58,11 @@ Talking points not yet covered: ${uncovered.length > 0 ? uncovered.join(', ') : 
 Recent transcript (last ~500 words):
 "${transcript.slice(-2000)}"
 
-Give 1-2 sentences of concise, actionable coaching. Focus on: are they on track for the time elapsed, what should they prioritize next, any red flags in what they've said. Be direct and specific. No fluff.`;
+Return 2-4 coaching notes as a JSON array of SHORT strings (under 8 words each). Each note is one glanceable observation. No markdown, no punctuation, no explanation — just the note itself.
+
+Examples of good notes: "Off topic", "Mention the team size", "Running behind on intro", "Good pace", "Bring up cost savings", "Too much detail here"
+
+Return ONLY the JSON array, nothing else. Example: ["Off topic", "Mention team size next", "Good energy"]`;
 
       const isOpenAI = s.apiType === 'openai';
       const url = isOpenAI ? `${s.apiBaseUrl}/v1/chat/completions` : `${s.apiBaseUrl}/v1/messages`;
@@ -80,7 +84,11 @@ Give 1-2 sentences of concise, actionable coaching. Focus on: are they on track 
         const text = isOpenAI
           ? (data?.choices?.[0]?.message?.content ?? '')
           : (data?.content?.[0]?.text ?? '');
-        if (text.trim()) setFeedback(text.trim());
+        const match = text.match(/\[[\s\S]*?\]/);
+        if (match) {
+          const notes: string[] = JSON.parse(match[0]);
+          if (notes.length > 0) setFeedback(notes);
+        }
       } catch (err) {
         console.error('[Coaching] Error:', err);
       } finally {
