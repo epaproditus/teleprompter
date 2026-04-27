@@ -28,5 +28,6 @@ export interface AppSettings {
   apiType: 'anthropic' | 'openai';
   sttProvider: 'whisper' | 'deepgram';
   deepgramApiKey: string;
-  deepgramKeyterms: string; // comma-separated list of hard words
+  deepgramKeyterms: string;
+  feedbackIntervalSec: number;
 }

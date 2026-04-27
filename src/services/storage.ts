@@ -13,6 +13,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   sttProvider: 'whisper',
   deepgramApiKey: '',
   deepgramKeyterms: '',
+  feedbackIntervalSec: 30,
 };
 
 export function loadPoints(): TalkingPoint[] {

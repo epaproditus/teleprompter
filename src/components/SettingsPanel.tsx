@@ -111,6 +111,24 @@ export default function SettingsPanel({ settings, onSave, onClose }: Props) {
           </label>
 
           <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-700">Coaching feedback interval (seconds)</span>
+            <span className="text-xs text-gray-400">How often the AI gives you guidance — current: {draft.feedbackIntervalSec}s</span>
+            <input
+              type="range"
+              min={10}
+              max={120}
+              step={5}
+              value={draft.feedbackIntervalSec}
+              onChange={e => update('feedbackIntervalSec', Number(e.target.value))}
+              className="w-full accent-blue-600"
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>10s</span>
+              <span>120s</span>
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-1">
             <span className="text-sm text-gray-700">API type</span>
             <div className="flex gap-2">
               {(['anthropic', 'openai'] as const).map(type => (

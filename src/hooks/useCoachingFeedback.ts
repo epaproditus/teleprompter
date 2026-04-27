@@ -29,8 +29,7 @@ export function useCoachingFeedback({ transcript, points, settings, context, isL
   useEffect(() => {
     if (!isListening) return;
 
-    // Check every 30 seconds (coaching doesn't need to be as frequent as matching)
-    const FEEDBACK_INTERVAL_MS = 30000;
+    const FEEDBACK_INTERVAL_MS = settingsRef.current.feedbackIntervalSec * 1000;
 
     const timer = setInterval(async () => {
       const s = settingsRef.current;
